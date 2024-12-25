@@ -165,3 +165,4 @@ Received Import Request.
 Start importing Assets/picture/IMG_7091 2.PNG using Guid(73f7ab7104cb14e488785456d69a1d2a) Importer(815301076,1909f56bfc062723c751e8b465ee728b)  -> (artifact id: '37d55d23f8a0a5e705993b91fd31f9a6') in 2.359435 seconds 
   Import took 2.374913 seconds .
 
+AssetImportWorkerClient::OnTransportError - code=2 error=End of file
