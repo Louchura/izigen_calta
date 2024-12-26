@@ -245,7 +245,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c5bba4988237a441ba441cc9f2441a8b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  handCards: []
+  handCards:
+  - {fileID: 1069689880}
+  - {fileID: 488663228}
+  - {fileID: 1481122974}
+  - {fileID: 1809856440}
+  - {fileID: 422571698}
   problemCard: {fileID: 0}
   resultPanel: {fileID: 0}
   resultText: {fileID: 0}
@@ -264,7 +269,7 @@ GameObject:
   - component: {fileID: 422571698}
   - component: {fileID: 422571697}
   m_Layer: 0
-  m_Name: handCards
+  m_Name: handCards5
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -385,7 +390,7 @@ GameObject:
   - component: {fileID: 488663228}
   - component: {fileID: 488663227}
   m_Layer: 0
-  m_Name: handCards
+  m_Name: handCards2
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -949,7 +954,7 @@ GameObject:
   - component: {fileID: 1069689880}
   - component: {fileID: 1069689879}
   m_Layer: 0
-  m_Name: handCards
+  m_Name: handCards1
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1337,7 +1342,7 @@ GameObject:
   - component: {fileID: 1481122974}
   - component: {fileID: 1481122973}
   m_Layer: 0
-  m_Name: handCards
+  m_Name: handCards3
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1812,7 +1817,7 @@ GameObject:
   - component: {fileID: 1809856440}
   - component: {fileID: 1809856439}
   m_Layer: 0
-  m_Name: handCards
+  m_Name: handCards4
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
