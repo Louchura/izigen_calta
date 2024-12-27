@@ -1,9 +1,19 @@
 using UnityEngine;
 using UnityEngine.UI;
+using System.Collections.Generic;
+using System.Linq;
 
 public class GameManager : MonoBehaviour
 {
-    public Image[] handCards; // 手札のイラスト（複数）
+    [System.Serializable]
+    public class CardData
+    {
+        public int unitId; // CSVのunit_id
+        public Sprite sprite; // 対応するイラスト
+    }
+
+    public List<CardData> cardDatabase; // CSVデータから読み込むカード情報
+    public Image[] handCards; // 手札のイラスト
     public Image problemCard; // 問題のイラスト
     public GameObject resultPanel; // 正解/不正解演出用パネル
     public Text resultText; // 演出用テキスト
@@ -15,8 +25,11 @@ public class GameManager : MonoBehaviour
     private float remainingTime; // 残り時間
     private bool isTimeRunning = false; // タイマーの状態を管理
 
+    private List<CardData> handCardData; // 手札のカードデータ
+
     void Start()
     {
+        LoadCSV(); // CSVのデータを読み込む
         StartGame();
     }
 
@@ -31,12 +44,44 @@ public class GameManager : MonoBehaviour
         StartTimer();
     }
 
+    // CSVデータを読み込む
+    void LoadCSV()
+    {
+        // ここでは仮のデータを作成（実際はCSVをパースして読み込む処理を記述）
+        cardDatabase = new List<CardData>
+        {
+            new CardData { unitId = 1, sprite = Resources.Load<Sprite>("Images/Card1") },
+            new CardData { unitId = 2, sprite = Resources.Load<Sprite>("Images/Card2") },
+            new CardData { unitId = 3, sprite = Resources.Load<Sprite>("Images/Card3") },
+            new CardData { unitId = 4, sprite = Resources.Load<Sprite>("Images/Card4") },
+            new CardData { unitId = 5, sprite = Resources.Load<Sprite>("Images/Card5") },
+        };
+    }
+
     // 手札を設定
     void SetHandCards()
     {
+        handCardData = new List<CardData>();
+        List<CardData> shuffledCards = cardDatabase.OrderBy(x => Random.value).ToList();
+
+        // 問題カードに一致する正解カードを決定
+        CardData correctCard = shuffledCards[0];
+        handCardData.Add(correctCard);
+
+        // 残りの手札をランダムに選ぶ（正解と異なるunit_idを持つもの）
+        foreach (var card in shuffledCards)
+        {
+            if (handCardData.Count >= handCards.Length) break;
+            if (!handCardData.Contains(card) && card.unitId != correctCard.unitId)
+            {
+                handCardData.Add(card);
+            }
+        }
+
+        // 手札のイラストをUIに反映
         for (int i = 0; i < handCards.Length; i++)
         {
-            handCards[i].sprite = GetRandomSprite();
+            handCards[i].sprite = handCardData[i].sprite;
             int index = i; // ローカルコピーを作成
             handCards[i].GetComponent<Button>().onClick.RemoveAllListeners();
             handCards[i].GetComponent<Button>().onClick.AddListener(() => OnCardClicked(index));
@@ -46,8 +91,8 @@ public class GameManager : MonoBehaviour
     // 問題カードを設定
     void SetProblemCard()
     {
-        correctIndex = Random.Range(0, handCards.Length); // 正解の手札をランダムに決定
-        problemCard.sprite = handCards[correctIndex].sprite; // 問題カードに正解のイラストを設定
+        correctIndex = Random.Range(0, handCardData.Count); // 正解の手札のインデックスをランダムに決定
+        problemCard.sprite = handCardData[correctIndex].sprite; // 問題カードのイラストを設定
     }
 
     // タイマー開始
@@ -121,12 +166,5 @@ public class GameManager : MonoBehaviour
     public void QuitGame()
     {
         Application.Quit();
-    }
-
-    // ランダムなイラストを取得する（仮）
-    Sprite GetRandomSprite()
-    {
-        // ここでリソースからランダムにスプライトをロードする処理を書く
-        return null;
     }
 }
