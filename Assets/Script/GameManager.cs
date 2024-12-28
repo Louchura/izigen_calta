@@ -46,17 +46,65 @@ public class GameManager : MonoBehaviour
 
     // CSVデータを読み込む
     void LoadCSV()
+{
+    // Resourcesフォルダ内のCSVファイルを読み込む
+    TextAsset csvFile = Resources.Load<TextAsset>("card_data"); // ファイル名（拡張子は不要）
+
+    if (csvFile == null)
     {
-        // ここでは仮のデータを作成（実際はCSVをパースして読み込む処理を記述）
-        cardDatabase = new List<CardData>
-        {
-            new CardData { unitId = 1, sprite = Resources.Load<Sprite>("Images/Card1") },
-            new CardData { unitId = 2, sprite = Resources.Load<Sprite>("Images/Card2") },
-            new CardData { unitId = 3, sprite = Resources.Load<Sprite>("Images/Card3") },
-            new CardData { unitId = 4, sprite = Resources.Load<Sprite>("Images/Card4") },
-            new CardData { unitId = 5, sprite = Resources.Load<Sprite>("Images/Card5") },
-        };
+        Debug.LogError("CSVファイルが見つかりません。Resourcesフォルダ内に配置してください。");
+        return;
     }
+
+    // CSVの内容を1行ごとに分割
+    string[] lines = csvFile.text.Split('\n');
+
+    cardDatabase = new List<CardData>(); // cardDatabaseを初期化
+
+    for (int i = 1; i < lines.Length; i++) // ヘッダー行をスキップするために1から開始
+    {
+        string line = lines[i].Trim();
+
+        // 空行をスキップ
+        if (string.IsNullOrEmpty(line)) continue;
+
+        // 行をカンマで分割
+        string[] values = line.Split(',');
+
+        if (values.Length < 2)
+        {
+            Debug.LogWarning($"行{i}のデータが不正です: {line}");
+            continue;
+        }
+
+        // unit_idを取得
+        if (!int.TryParse(values[0], out int unitId))
+        {
+            Debug.LogWarning($"行{i}のunit_idが不正です: {values[0]}");
+            continue;
+        }
+
+        // スプライトを取得
+        string spritePath = values[1];
+        Sprite sprite = Resources.Load<Sprite>(spritePath);
+
+        if (sprite == null)
+        {
+            Debug.LogWarning($"行{i}のスプライトが見つかりません: {spritePath}");
+            continue;
+        }
+
+        // CardDataオブジェクトを作成し、リストに追加
+        cardDatabase.Add(new CardData
+        {
+            unitId = unitId,
+            sprite = sprite
+        });
+    }
+
+    Debug.Log($"CSVから{cardDatabase.Count}枚のカードデータを読み込みました。");
+}
+
 
     // 手札を設定
     void SetHandCards()
