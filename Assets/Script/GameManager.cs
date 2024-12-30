@@ -19,6 +19,8 @@ public class GameManager : MonoBehaviour
     public Text resultText; // 演出用テキスト
     public GameObject choicePanel; // 選択肢UI（続ける・終了ボタン）
     public Text timerText; // 制限時間表示用テキスト
+    public Button continueButton; // 続けるボタン
+    public Button quitButton; // 終了ボタン
 
     private int correctIndex; // 正解の手札のインデックス
     private float timeLimit = 10f; // 制限時間（秒）
@@ -31,7 +33,14 @@ public class GameManager : MonoBehaviour
     {
         LoadCSV(); // CSVのデータを読み込む
         StartGame();
+        // ボタンのリスナーを設定
+        continueButton.onClick.AddListener(ContinueGame);
+        quitButton.onClick.AddListener(QuitGame);
+
+        // 選択肢パネルを非表示にする
+        choicePanel.SetActive(false);
     }
+    
 
     // ゲーム開始処理
     public void StartGame()
@@ -207,6 +216,7 @@ public class GameManager : MonoBehaviour
     // ゲームを続ける
     public void ContinueGame()
     {
+        choicePanel.SetActive(false); // パネルを非表示
         StartGame();
     }
 
@@ -214,5 +224,6 @@ public class GameManager : MonoBehaviour
     public void QuitGame()
     {
         Application.Quit();
+        Debug.Log("ゲーム終了"); // エディタで実行中の際にはこのログが出力されま
     }
 }
