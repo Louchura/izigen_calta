@@ -57,7 +57,7 @@ public class GameManager : MonoBehaviour
     void LoadCSV()
 {
     // Resourcesフォルダ内のCSVファイルを読み込む
-    TextAsset csvFile = Resources.Load<TextAsset>("card_data"); // ファイル名（拡張子は不要）
+    TextAsset csvFile = Resources.Load<TextAsset>("unit_data"); // ファイル名（拡張子は不要）
 
     if (csvFile == null)
     {
