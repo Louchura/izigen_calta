@@ -102,8 +102,7 @@ public class GameManager : MonoBehaviour
             Debug.LogWarning($"行{i}のスプライトが見つかりません: {spritePath}");
             continue;
         }
-
-        // CardDataオブジェクトを作成し、リストに追加
+         // CardDataオブジェクトを作成し、リストに追加
         cardDatabase.Add(new CardData
         {
             unitId = unitId,
