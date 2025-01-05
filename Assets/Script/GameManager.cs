@@ -176,8 +176,9 @@ public class GameManager : MonoBehaviour
     // 時間切れ処理
     void OnTimeUp()
     {
-        timerText.gameObject.SetActive(false);
-        ShowResult(false); // 時間切れは不正解とみなす
+        isTimeRunning = false;
+        timerText.gameObject.SetActive(false); // 制限時間の表示を消す
+        Debug.Log("時間切れ！");
     }
 
     // カードがクリックされたときの処理
