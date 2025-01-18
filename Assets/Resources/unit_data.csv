@@ -1,10 +1,10 @@
-﻿unit_id,sprite_path
-1,Images/Card1
-1,Images/Card2
-1,Images/Card3
-2,Images/Card4
-2,Images/Card5
-2,Images/Card6
-3,Images/Card7
-3,Images/Card8
-3,Images/Card9
+"unit_id		",sprite_path,unique_id
+1,Images/Card1,1001
+1,Images/Card2,1002
+1,Images/Card3,1003
+2,Images/Card4,1004
+2,Images/Card5,1005
+2,Images/Card6,1006
+3,Images/Card7,1007
+3,Images/Card8,1008
+3,Images/Card9,1009

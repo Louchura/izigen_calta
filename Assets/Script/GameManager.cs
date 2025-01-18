@@ -9,6 +9,7 @@ public class GameManager : MonoBehaviour
     public class CardData
     {
         public int unitId; // CSVのunit_id
+        public string uniqueId;//CSVのunique_ID
         public Sprite sprite; // 対応するイラスト
     }
 
@@ -80,7 +81,7 @@ public class GameManager : MonoBehaviour
         // 行をカンマで分割
         string[] values = line.Split(',');
 
-        if (values.Length < 2)
+        if (values.Length < 3)
         {
             Debug.LogWarning($"行{i}のデータが不正です: {line}");
             continue;
@@ -93,6 +94,7 @@ public class GameManager : MonoBehaviour
             continue;
         }
 
+        string uniqueId = values[2]; // unique_IDを取得
         // スプライトを取得
         string spritePath = values[1];
         Sprite sprite = Resources.Load<Sprite>(spritePath);
@@ -102,15 +104,25 @@ public class GameManager : MonoBehaviour
             Debug.LogWarning($"行{i}のスプライトが見つかりません: {spritePath}");
             continue;
         }
+
+    
+
          // CardDataオブジェクトを作成し、リストに追加
         cardDatabase.Add(new CardData
         {
             unitId = unitId,
+            uniqueId=uniqueId,
             sprite = sprite
         });
     }
 
     Debug.Log($"CSVから{cardDatabase.Count}枚のカードデータを読み込みました。");
+
+    foreach (var card in cardDatabase)
+{
+    Debug.Log($"unitId: {card.unitId}, uniqueId: {card.uniqueId}, sprite: {card.sprite.name}");
+}
+Debug.Log($"CSVから{cardDatabase.Count}枚のカードデータを読み込みました。");
 }
 
 
@@ -147,7 +159,7 @@ public class GameManager : MonoBehaviour
     // 問題カードを設定
     void SetProblemCard()
     {
-        correctIndex = Random.Range(0, handCardData.Count); // 正解の手札のインデックスをランダムに決定
+      　correctIndex = Random.Range(0, handCardData.Count); // 正解の手札のインデックスをランダムに決定
         problemCard.sprite = handCardData[correctIndex].sprite; // 問題カードのイラストを設定
     }
 
