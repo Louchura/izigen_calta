@@ -24,7 +24,7 @@ public class GameManager : MonoBehaviour
     public Button quitButton; // 終了ボタン
 
     private int correctIndex; // 正解の手札のインデックス
-    private float timeLimit = 10f; // 制限時間（秒）
+    private float timeLimit = 1f; // 制限時間（秒）
     private float remainingTime; // 残り時間
     private bool isTimeRunning = false; // タイマーの状態を管理
 
