@@ -1,0 +1,4 @@
+# Unityのキャッシュやログを無視
+Library/
+Logs/
+.collabignore
