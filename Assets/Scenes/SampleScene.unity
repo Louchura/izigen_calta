@@ -242,7 +242,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 370366753}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: c5bba4988237a441ba441cc9f2441a8b, type: 3}
+  m_Script: {fileID: 11500000, guid: 2bb75ce6af03d44a683db12c4040d3ec, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   cardDatabase: []
@@ -813,7 +813,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 370366755}
+      - m_Target: {fileID: 0}
         m_TargetAssemblyTypeName: GameManager, Assembly-CSharp
         m_MethodName: ContinueGame
         m_Mode: 1
@@ -1692,7 +1692,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 370366755}
+      - m_Target: {fileID: 0}
         m_TargetAssemblyTypeName: GameManager, Assembly-CSharp
         m_MethodName: QuitGame
         m_Mode: 1
