@@ -157,11 +157,46 @@ Debug.Log($"CSVから{cardDatabase.Count}枚のカードデータを読み込み
     }
 
     // 問題カードを設定
-    void SetProblemCard()
+    // 問題カードを設定
+void SetProblemCard()
+{
+    // 1: リストのcardDatabaseから、correctIndexのカードと同じunit_idを持つカードを抽出
+    correctIndex = Random.Range(0, handCardData.Count); // 正解の手札のインデックスをランダムに決定
+    CardData correctCard = handCardData[correctIndex]; // 正解カードを取得
+
+    // 同じunit_idを持つカードをフィルタリング
+    List<CardData> sameUnitIdCards = cardDatabase
+        .Where(card => card.unitId == correctCard.unitId)
+        .ToList();
+
+    if (sameUnitIdCards.Count == 0)
     {
-      　correctIndex = Random.Range(0, handCardData.Count); // 正解の手札のインデックスをランダムに決定
-        problemCard.sprite = handCardData[correctIndex].sprite; // 問題カードのイラストを設定
+        Debug.LogError($"同じunit_idを持つカードが存在しません (unit_id: {correctCard.unitId})");
+        return;
     }
+
+    // 2: 抽出したカードのunique_idを比較
+    CardData selectedCard = null;
+    foreach (var card in sameUnitIdCards)
+    {
+        if (card.uniqueId != correctCard.uniqueId)
+        {
+            selectedCard = card;
+            break;
+        }
+    }
+
+    // 3: 違うunique_idのカードを設定
+    if (selectedCard != null)
+    {
+        problemCard.sprite = selectedCard.sprite; // 問題カードにスプライトを設定
+    }
+    else
+    {
+        Debug.LogWarning($"同じunique_id以外のカードが見つからなかったため、正解カードを使用します");
+        problemCard.sprite = correctCard.sprite; // デフォルトで正解カードを設定
+    }
+}
 
     // タイマー開始
     void StartTimer()
