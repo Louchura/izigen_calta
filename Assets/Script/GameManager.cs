@@ -211,7 +211,7 @@ void SetProblemCard()
         if (isTimeRunning)
         {
             remainingTime -= Time.deltaTime; // 残り時間を減少
-            timerText.text = "残り時間: " + Mathf.Ceil(remainingTime).ToString() + "秒";
+            timerText.text = Mathf.Ceil(remainingTime).ToString() + "秒";
 
             if (remainingTime <= 0)
             {
