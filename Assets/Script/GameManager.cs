@@ -24,7 +24,7 @@ public class GameManager : MonoBehaviour
     public Button quitButton; // 終了ボタン
 
     private int correctIndex; // 正解の手札のインデックス
-    private float timeLimit = 3f; // 制限時間（秒）
+    private float timeLimit = 30f; // 制限時間（秒）
     private float remainingTime; // 残り時間
     private bool isTimeRunning = false; // タイマーの状態を管理
 
@@ -128,33 +128,34 @@ Debug.Log($"CSVから{cardDatabase.Count}枚のカードデータを読み込み
 
     // 手札を設定
     void SetHandCards()
+{
+    handCardData = new List<CardData>();
+    List<CardData> shuffledCards = cardDatabase.OrderBy(x => Random.value).ToList();
+
+    // 正解カードを決定
+    CardData correctCard = shuffledCards[0];
+    handCardData.Add(correctCard);
+
+    // 異なる unitId を持つカードのみを手札に追加する
+    foreach (var card in shuffledCards)
     {
-        handCardData = new List<CardData>();
-        List<CardData> shuffledCards = cardDatabase.OrderBy(x => Random.value).ToList();
-
-        // 問題カードに一致する正解カードを決定
-        CardData correctCard = shuffledCards[0];
-        handCardData.Add(correctCard);
-
-        // 残りの手札をランダムに選ぶ（正解と異なるunit_idを持つもの）
-        foreach (var card in shuffledCards)
+        if (handCardData.Count >= handCards.Length) break;
+        if (!handCardData.Any(c => c.unitId == card.unitId)) // unitId が重複しないかチェック
         {
-            if (handCardData.Count >= handCards.Length) break;
-            if (!handCardData.Contains(card) && card.unitId != correctCard.unitId)
-            {
-                handCardData.Add(card);
-            }
-        }
-
-        // 手札のイラストをUIに反映
-        for (int i = 0; i < handCards.Length; i++)
-        {
-            handCards[i].sprite = handCardData[i].sprite;
-            int index = i; // ローカルコピーを作成
-            handCards[i].GetComponent<Button>().onClick.RemoveAllListeners();
-            handCards[i].GetComponent<Button>().onClick.AddListener(() => OnCardClicked(index));
+            handCardData.Add(card);
         }
     }
+
+    // 手札のイラストをUIに反映
+    for (int i = 0; i < handCards.Length; i++)
+    {
+        if (i >= handCardData.Count) break; // 安全策
+        handCards[i].sprite = handCardData[i].sprite;
+        int index = i; // ローカルコピーを作成
+        handCards[i].GetComponent<Button>().onClick.RemoveAllListeners();
+        handCards[i].GetComponent<Button>().onClick.AddListener(() => OnCardClicked(index));
+    }
+}
 
     // 問題カードを設定
     // 問題カードを設定
