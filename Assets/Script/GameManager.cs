@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using System.Collections.Generic;
 using System.Linq;
+using UnityEngine.SceneManagement;
 
 public class GameManager : MonoBehaviour
 {
@@ -22,6 +23,10 @@ public class GameManager : MonoBehaviour
     public Text timerText; // 制限時間表示用テキスト
     public Button continueButton; // 続けるボタン
     public Button quitButton; // 終了ボタン
+    public GameObject pausePanel; // ポーズ用パネル
+    public Button pauseButton; // ポーズボタン
+    public Button resumeButton; // 続行ボタン
+    public Button quitToTitleButton; // タイトルに戻るボタン
 
     private int correctIndex; // 正解の手札のインデックス
     private float timeLimit = 30f; // 制限時間（秒）
@@ -38,8 +43,14 @@ public class GameManager : MonoBehaviour
         continueButton.onClick.AddListener(ContinueGame);
         quitButton.onClick.AddListener(QuitGame);
 
+        pauseButton.onClick.AddListener(PauseGame);
+        resumeButton.onClick.AddListener(ResumeGame);
+        quitToTitleButton.onClick.AddListener(ReturnToTitle);
+
         // 選択肢パネルを非表示にする
         choicePanel.SetActive(false);
+        // ポーズパネルを非表示
+        pausePanel.SetActive(false); 
     }
     
 
@@ -275,4 +286,26 @@ void SetProblemCard()
         Application.Quit();
         Debug.Log("ゲーム終了"); // エディタで実行中の際にはこのログが出力されま
     }
+
+    // ゲームを一時停止
+    public void PauseGame()
+    {
+        isTimeRunning = false; // タイマーを停止
+        pausePanel.SetActive(true); // ポーズパネルを表示
+    }
+
+    // ゲームを再開
+    public void ResumeGame()
+    {
+        isTimeRunning = true; // タイマーを再開
+        pausePanel.SetActive(false); // ポーズパネルを閉じる
+    }
+
+    // タイトルに戻る
+    public void ReturnToTitle()
+    {
+        SceneManager.LoadScene("OutGame"); // タイトルシーンへ遷移
+    }
+
+
 }
