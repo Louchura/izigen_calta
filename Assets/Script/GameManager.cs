@@ -3,6 +3,10 @@ using UnityEngine.UI;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine.SceneManagement;
+using System.IO; // JSONファイルの入出力用
+using Newtonsoft.Json; // JSONを扱うためのライブラリ
+
+
 
 public class GameManager : MonoBehaviour
 {
@@ -13,6 +17,14 @@ public class GameManager : MonoBehaviour
         public string uniqueId;//CSVのunique_ID
         public Sprite sprite; // 対応するイラスト
     }
+
+    public class UserData
+    {
+        public int highScore; // ハイスコア
+    }
+
+     private const string FILE_PATH = "user_data.json"; // ユーザーデータファイルのパス
+
 
     public List<CardData> cardDatabase; // CSVデータから読み込むカード情報
     public Image[] handCards; // 手札のイラスト
@@ -34,9 +46,15 @@ public class GameManager : MonoBehaviour
     private bool isTimeRunning = false; // タイマーの状態を管理
 
     private List<CardData> handCardData; // 手札のカードデータ
+    private int currentScore = 0; // 現在のスコア
+    private int highScore = 0; // ハイスコア
+    private int gameCount = 0; // 3回セットのカウント
+    private int comboCount = 0; // 連続正解数
+
 
     void Start()
     {
+        LoadUserData(); // ユーザーデータをロード
         LoadCSV(); // CSVのデータを読み込む
         StartGame();
         // ボタンのリスナーを設定
@@ -52,6 +70,34 @@ public class GameManager : MonoBehaviour
         // ポーズパネルを非表示
         pausePanel.SetActive(false); 
     }
+
+     // ユーザーデータをロード（なければ新規作成）
+    void LoadUserData()
+    {
+        string path = Path.Combine(Application.persistentDataPath, FILE_PATH);
+        if (File.Exists(path))
+        {
+            string json = File.ReadAllText(path);
+            UserData data = JsonConvert.DeserializeObject<UserData>(json);
+            highScore = data.highScore;
+        }
+        else
+        {
+            highScore = 0;
+            SaveUserData(); // 新規ファイル作成
+        }
+    }
+
+    // ユーザーデータを保存
+    void SaveUserData()
+    {
+        string path = Path.Combine(Application.persistentDataPath, FILE_PATH);
+        UserData data = new UserData { highScore = highScore };
+        string json = JsonConvert.SerializeObject(data, Formatting.Indented);
+        File.WriteAllText(path, json);
+    }
+
+    
     
 
     // ゲーム開始処理
@@ -251,10 +297,15 @@ void SetProblemCard()
 
         if (index == correctIndex)
         {
+            comboCount++;
+            int bonus = (comboCount > 1) ? 500 : 0; // 2連続目からボーナス付与
+            currentScore += 1000 + bonus;
             ShowResult(true);
         }
+        
         else
         {
+            comboCount = 0;
             ShowResult(false);
         }
     }
@@ -264,14 +315,38 @@ void SetProblemCard()
     {
         resultPanel.SetActive(true);
         resultText.text = isCorrect ? "正解！" : "不正解！";
-        Invoke(nameof(ShowChoicePanel), 2.0f); // 2秒後に選択肢を表示
+        Invoke(nameof(EndRound), 2.0f); // 2秒後に選択肢を表示
     }
+
+    void EndRound()
+    {
+        gameCount++;
+
+        if (gameCount >= 3)
+        {
+            // 3回プレイ後にスコア比較
+            if (currentScore > highScore)
+            {
+                highScore = currentScore;
+                SaveUserData();
+            }
+            gameCount = 0; // カウントをリセット
+            ShowChoicePanel();
+        }
+        else
+        {
+            StartGame(); // 次のラウンドを開始
+        }
+    }
+
 
     // 選択肢を表示
     void ShowChoicePanel()
     {
         choicePanel.SetActive(true);
     }
+
+
 
     // ゲームを続ける
     public void ContinueGame()
