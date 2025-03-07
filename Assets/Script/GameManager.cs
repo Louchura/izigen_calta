@@ -33,6 +33,7 @@ public class GameManager : MonoBehaviour
     public Text resultText; // 演出用テキスト
     public GameObject choicePanel; // 選択肢UI（続ける・終了ボタン）
     public Text timerText; // 制限時間表示用テキスト
+    public Text currentScoreText; //現在のスコアを表示するテキスト
     public Button continueButton; // 続けるボタン
     public Button quitButton; // 終了ボタン
     public GameObject pausePanel; // ポーズ用パネル
@@ -287,6 +288,13 @@ void SetProblemCard()
         ShowChoicePanel();
     }
 
+    void UpdateScoreUI(){
+        if(currentScoreText != null)
+        {
+            currentScoreText.text="スコア:" + currentScore.ToString();
+        }
+    }
+
     // カードがクリックされたときの処理
     void OnCardClicked(int index)
     {
@@ -300,6 +308,7 @@ void SetProblemCard()
             comboCount++;
             int bonus = (comboCount > 1) ? 500 : 0; // 2連続目からボーナス付与
             currentScore += 1000 + bonus;
+            UpdateScoreUI();
             ShowResult(true);
         }
         
@@ -317,6 +326,8 @@ void SetProblemCard()
         resultText.text = isCorrect ? "正解！" : "不正解！";
         Invoke(nameof(EndRound), 2.0f); // 2秒後に選択肢を表示
     }
+
+    //ラウンド終了処理(スコア比較時にもUIを更新)
 
     void EndRound()
     {
@@ -337,6 +348,10 @@ void SetProblemCard()
         {
             StartGame(); // 次のラウンドを開始
         }
+
+        UpdateScoreUI(); // スコア表示を更新
+
+
     }
 
 
