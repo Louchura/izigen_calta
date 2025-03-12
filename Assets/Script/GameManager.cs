@@ -30,10 +30,13 @@ public class GameManager : MonoBehaviour
     public Image[] handCards; // 手札のイラスト
     public Image problemCard; // 問題のイラスト
     public GameObject resultPanel; // 正解/不正解演出用パネル
-    public Text resultText; // 演出用テキスト
+    public Text judgeText; // 演出用テキスト
     public GameObject choicePanel; // 選択肢UI（続ける・終了ボタン）
     public Text timerText; // 制限時間表示用テキスト
     public Text currentScoreText; //現在のスコアを表示するテキスト
+    public Text currentHighScore; //ハイスコアを表示するテキスト
+    public Text currentScoreResult; //リザルト画面に現在のスコアを表示するテキスト
+    public Text resultText; //リザルト演出で表示するテキスト
     public Button continueButton; // 続けるボタン
     public Button quitButton; // 終了ボタン
     public GameObject pausePanel; // ポーズ用パネル
@@ -323,7 +326,7 @@ void SetProblemCard()
     void ShowResult(bool isCorrect)
     {
         resultPanel.SetActive(true);
-        resultText.text = isCorrect ? "正解！" : "不正解！";
+        judgeText.text = isCorrect ? "正解！" : "不正解！";
         Invoke(nameof(EndRound), 2.0f); // 2秒後に選択肢を表示
     }
 
@@ -359,6 +362,12 @@ void SetProblemCard()
     void ShowChoicePanel()
     {
         choicePanel.SetActive(true);
+        //ここでハイスコアを表示する（choicePanek内にハイスコアを表示する場所を作る）
+        currentHighScore.text="これまでのハイスコア:" + highScore.ToString();
+        currentScoreResult.text="今回のスコア:" + currentScore.ToString();
+
+
+
     }
 
 
