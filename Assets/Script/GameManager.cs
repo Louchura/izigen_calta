@@ -362,9 +362,17 @@ void SetProblemCard()
     void ShowChoicePanel()
     {
         choicePanel.SetActive(true);
-        //ここでハイスコアを表示する（choicePanek内にハイスコアを表示する場所を作る）
+        //ここでハイスコアを表示する
         currentHighScore.text="これまでのハイスコア:" + highScore.ToString();
         currentScoreResult.text="今回のスコア:" + currentScore.ToString();
+         if (currentScore > highScore)
+            {
+                resultText.text="ハイスコア更新！";
+            }
+             else
+        {
+            resultText.text="ハイスコア更新失敗・・・";
+        }
 
 
 
