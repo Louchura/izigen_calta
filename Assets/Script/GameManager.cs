@@ -21,9 +21,11 @@ public class GameManager : MonoBehaviour
     public class UserData
     {
         public int highScore; // ハイスコア
+        public List<string> correctCards; // 正解したカードのunique_idリスト
     }
 
      private const string FILE_PATH = "user_data.json"; // ユーザーデータファイルのパス
+     private UserData userData; // ユーザーデータ
 
 
     public List<CardData> cardDatabase; // CSVデータから読み込むカード情報
@@ -87,8 +89,13 @@ public class GameManager : MonoBehaviour
         }
         else
         {
-            highScore = 0;
-            SaveUserData(); // 新規ファイル作成
+            // 初期データ作成
+            userData = new UserData
+            {
+                highScore = 0,
+                correctCards = new List<string>()
+            };
+            SaveUserData();
         }
     }
 
@@ -311,6 +318,13 @@ void SetProblemCard()
             comboCount++;
             int bonus = (comboCount > 1) ? 500 : 0; // 2連続目からボーナス付与
             currentScore += 1000 + bonus;
+
+            // **正解したカードの unique_id を保存**
+            string uniqueId = handCardData[index].uniqueId;
+            if (!userData.correctCards.Contains(uniqueId)) // 重複防止
+            {
+                userData.correctCards.Add(uniqueId);
+            }
             UpdateScoreUI();
             ShowResult(true);
         }
@@ -331,6 +345,7 @@ void SetProblemCard()
     }
 
     //ラウンド終了処理(スコア比較時にもUIを更新)
+    // ✅ ゲーム終了時にJSONを更新
 
     void EndRound()
     {
@@ -341,7 +356,7 @@ void SetProblemCard()
             // 3回プレイ後にスコア比較
             if (currentScore > highScore)
             {
-                highScore = currentScore;
+                userData.highScore = currentScore;
                 SaveUserData();
             }
             gameCount = 0; // カウントをリセット
