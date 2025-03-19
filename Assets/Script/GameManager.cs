@@ -79,32 +79,41 @@ public class GameManager : MonoBehaviour
 
      // ユーザーデータをロード（なければ新規作成）
     void LoadUserData()
+{
+    string path = Path.Combine(Application.persistentDataPath, FILE_PATH);
+    if (File.Exists(path))
     {
-        string path = Path.Combine(Application.persistentDataPath, FILE_PATH);
-        if (File.Exists(path))
+        string json = File.ReadAllText(path);
+        userData = JsonConvert.DeserializeObject<UserData>(json); // ✅ 直接 userData に代入！
+
+        if (userData == null)
         {
-            string json = File.ReadAllText(path);
-            UserData data = JsonConvert.DeserializeObject<UserData>(json);
-            highScore = data.highScore;
-        }
-        else
-        {
-            // 初期データ作成
-            userData = new UserData
-            {
-                highScore = 0,
-                correctCards = new List<string>()
-            };
+            Debug.LogError("userData の JSON 読み込みに失敗しました。新規データを作成します。");
+            userData = new UserData { highScore = 0, correctCards = new List<string>() };
             SaveUserData();
         }
+        else if (userData.correctCards == null)
+        {
+            userData.correctCards = new List<string>(); // ✅ correctCards が null なら初期化
+        }
     }
+    else
+    {
+        // 初期データ作成
+        userData = new UserData
+        {
+            highScore = 0,
+            correctCards = new List<string>()
+        };
+        SaveUserData();
+    }
+}
 
     // ユーザーデータを保存
     void SaveUserData()
     {
         string path = Path.Combine(Application.persistentDataPath, FILE_PATH);
-        UserData data = new UserData { highScore = highScore };
-        string json = JsonConvert.SerializeObject(data, Formatting.Indented);
+        string json = JsonConvert.SerializeObject(userData, Formatting.Indented);
         File.WriteAllText(path, json);
     }
 
@@ -199,10 +208,17 @@ Debug.Log($"CSVから{cardDatabase.Count}枚のカードデータを読み込み
 {
     handCardData = new List<CardData>();
     List<CardData> shuffledCards = cardDatabase.OrderBy(x => Random.value).ToList();
+    if (shuffledCards.Count == 0)
+    {
+        Debug.LogError("shuffledCardsが空です。CSVデータが正しく読み込まれているか確認してください。");
+        return;
+    }
 
     // 正解カードを決定
     CardData correctCard = shuffledCards[0];
     handCardData.Add(correctCard);
+    Debug.Log($"正解カード: unitId={correctCard.unitId}, uniqueId={correctCard.uniqueId}");
+
 
     // 異なる unitId を持つカードのみを手札に追加する
     foreach (var card in shuffledCards)
@@ -214,14 +230,31 @@ Debug.Log($"CSVから{cardDatabase.Count}枚のカードデータを読み込み
         }
     }
 
+     // 手札のデータが正しく設定されているか確認
+    if (handCardData.Count < handCards.Length)
+    {
+        Debug.LogError($"手札が不足しています！ 必要: {handCards.Length}, 現在: {handCardData.Count}");
+    }
+
+
     // 手札のイラストをUIに反映
     for (int i = 0; i < handCards.Length; i++)
     {
         if (i >= handCardData.Count) break; // 安全策
+        if (handCardData[i] == null)
+        {
+            Debug.LogError($"handCardData[{i}] が null です！");
+        }
+        else
+        {
         handCards[i].sprite = handCardData[i].sprite;
         int index = i; // ローカルコピーを作成
         handCards[i].GetComponent<Button>().onClick.RemoveAllListeners();
         handCards[i].GetComponent<Button>().onClick.AddListener(() => OnCardClicked(index));
+
+        Debug.Log($"カードボタン設定: index={index}, unitId={handCardData[i].unitId}, uniqueId={handCardData[i].uniqueId}");
+        }
+        
     }
 }
 
@@ -310,6 +343,18 @@ void SetProblemCard()
     {
         if (!isTimeRunning) return; // タイマーが動いていない場合は無効
 
+         if (handCardData == null || handCardData.Count == 0)
+    {
+        Debug.LogError("handCardDataがnullまたは空です！");
+        return;
+    }
+
+    if (index < 0 || index >= handCardData.Count)
+    {
+        Debug.LogError($"無効なインデックスが指定されました: {index}");
+        return;
+    }
+
         isTimeRunning = false; // タイマーを停止
         timerText.gameObject.SetActive(false); // タイマーUIを非表示
 
@@ -319,12 +364,23 @@ void SetProblemCard()
             int bonus = (comboCount > 1) ? 500 : 0; // 2連続目からボーナス付与
             currentScore += 1000 + bonus;
 
+            //  userData の null チェックを追加
+        if (userData == null)
+        {
+            Debug.LogError("userData が null です！ LoadUserData() が正しく実行されたか確認してください。");
+            return;
+        }
+
             // **正解したカードの unique_id を保存**
             string uniqueId = handCardData[index].uniqueId;
             if (!userData.correctCards.Contains(uniqueId)) // 重複防止
             {
                 userData.correctCards.Add(uniqueId);
             }
+
+            SaveUserData();
+
+           
             UpdateScoreUI();
             ShowResult(true);
         }
