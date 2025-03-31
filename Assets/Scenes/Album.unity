@@ -1209,5 +1209,17 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 1092558284513314297, guid: 9378b8aaf34064936946f2325e7a29a2, type: 3}
+      propertyPath: m_Name
+      value: LockText
+      objectReference: {fileID: 0}
+    - target: {fileID: 1092558284513314297, guid: 9378b8aaf34064936946f2325e7a29a2, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1092558284513314299, guid: 9378b8aaf34064936946f2325e7a29a2, type: 3}
+      propertyPath: m_Text
+      value: "\u672A\u89E3\u653E"
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 9378b8aaf34064936946f2325e7a29a2, type: 3}
