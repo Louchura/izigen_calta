@@ -1,13 +1,13 @@
 "unit_id		",sprite_path,unique_id
-1,Images/Card1,1001
-1,Images/Card2,1002
-1,Images/Card3,1003
-2,Images/Card4,1004
-2,Images/Card5,1005
-2,Images/Card6,1006
-3,Images/Card7,1007
-3,Images/Card8,1008
-3,Images/Card9,1009
+21550101,Images/Card1,2155010103
+21550101,Images/Card2,2155010102
+21550101,Images/Card3,2155010101
+21550301,Images/Card4,2155030101
+21550301,Images/Card5,2155030102
+21550301,Images/Card6,2155030103
+21550201,Images/Card7,2155020103
+21550201,Images/Card8,2155020102
+21550201,Images/Card9,2155020101
 4,Images/Card10,1010
 4,Images/Card11,1011
 4,Images/Card12,1012
