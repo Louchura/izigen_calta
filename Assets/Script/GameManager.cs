@@ -16,6 +16,7 @@ public class GameManager : MonoBehaviour
         public int unitId; // CSVのunit_id
         public string uniqueId;//CSVのunique_ID
         public Sprite sprite; // 対応するイラスト
+        public Rect cropRect; 
     }
 
     public class UserData
@@ -182,14 +183,24 @@ public class GameManager : MonoBehaviour
             continue;
         }
 
-    
+        if (values.Length < 7) // 列数が足りない場合はスキップ
+        {
+            Debug.LogWarning($"行{i}のデータが不完全です: {line}");
+            continue;
+        }
+
+        float cropX = float.Parse(values[3]);
+        float cropY = float.Parse(values[4]);
+        float cropWidth = float.Parse(values[5]);
+        float cropHeight = float.Parse(values[6]);
 
          // CardDataオブジェクトを作成し、リストに追加
         cardDatabase.Add(new CardData
         {
             unitId = unitId,
             uniqueId=uniqueId,
-            sprite = sprite
+            sprite = sprite,
+            cropRect = new Rect(cropX, cropY, cropWidth, cropHeight)
         });
     }
 
@@ -290,14 +301,16 @@ void SetProblemCard()
 
     // 3: 違うunique_idのカードを設定
     if (selectedCard != null)
-    {
-        problemCard.sprite = selectedCard.sprite; // 問題カードにスプライトを設定
-    }
-    else
-    {
-        Debug.LogWarning($"同じunique_id以外のカードが見つからなかったため、正解カードを使用します");
-        problemCard.sprite = correctCard.sprite; // デフォルトで正解カードを設定
-    }
+{
+    problemCard.sprite = CreateCroppedSprite(selectedCard.sprite, selectedCard.cropRect);
+}
+else
+{
+    problemCard.sprite = CreateCroppedSprite(correctCard.sprite, correctCard.cropRect);
+}
+
+   
+
 }
 
     // タイマー開始
@@ -321,6 +334,33 @@ void SetProblemCard()
             }
         }
     }
+
+    private Sprite CreateCroppedSprite(Sprite originalSprite, Rect cropRect)
+{
+    Texture2D originalTexture = originalSprite.texture;
+    Rect spriteRect = originalSprite.textureRect;
+
+    // 元スプライトに対して cropRect を調整（テクスチャ座標系）
+    Rect actualCrop = new Rect(
+        spriteRect.x + cropRect.x,
+        spriteRect.y + cropRect.y,
+        cropRect.width,
+        cropRect.height
+    );
+
+    Texture2D croppedTexture = new Texture2D((int)actualCrop.width, (int)actualCrop.height);
+    Color[] pixels = originalTexture.GetPixels(
+        (int)actualCrop.x,
+        (int)actualCrop.y,
+        (int)actualCrop.width,
+        (int)actualCrop.height
+    );
+    croppedTexture.SetPixels(pixels);
+    croppedTexture.Apply();
+
+    return Sprite.Create(croppedTexture, new Rect(0, 0, croppedTexture.width, croppedTexture.height), new Vector2(0.5f, 0.5f));
+}
+
 
     // 時間切れ処理
     void OnTimeUp()
