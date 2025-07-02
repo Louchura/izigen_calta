@@ -48,7 +48,7 @@ public class GameManager : MonoBehaviour
     public Button quitToTitleButton; // タイトルに戻るボタン
 
     private int correctIndex; // 正解の手札のインデックス
-    private float timeLimit = 30f; // 制限時間（秒）
+    private float timeLimit = 5f; // 制限時間（秒）
     private float remainingTime; // 残り時間
     private bool isTimeRunning = false; // タイマーの状態を管理
 
@@ -447,7 +447,7 @@ else
     {
         gameCount++;
 
-        if (gameCount >= 3)
+        if (gameCount >= 10)
         {
             // 3回プレイ後にスコア比較
             if (currentScore > highScore)
