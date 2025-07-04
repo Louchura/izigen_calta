@@ -6,8 +6,6 @@ using UnityEngine.SceneManagement;
 using System.IO; // JSONファイルの入出力用
 using Newtonsoft.Json; // JSONを扱うためのライブラリ
 
-
-
 public class GameManager : MonoBehaviour
 {
     [System.Serializable]
@@ -16,7 +14,7 @@ public class GameManager : MonoBehaviour
         public int unitId; // CSVのunit_id
         public string uniqueId;//CSVのunique_ID
         public Sprite sprite; // 対応するイラスト
-        public Rect cropRect; 
+        public Rect cropRect;
     }
 
     public class UserData
@@ -25,8 +23,8 @@ public class GameManager : MonoBehaviour
         public List<string> correctCards; // 正解したカードのunique_idリスト
     }
 
-     private const string FILE_PATH = "user_data.json"; // ユーザーデータファイルのパス
-     private UserData userData; // ユーザーデータ
+    private const string FILE_PATH = "user_data.json"; // ユーザーデータファイルのパス
+    private UserData userData; // ユーザーデータ
 
 
     public List<CardData> cardDatabase; // CSVデータから読み込むカード情報
@@ -58,11 +56,14 @@ public class GameManager : MonoBehaviour
     private int gameCount = 0; // 3回セットのカウント
     private int comboCount = 0; // 連続正解数
 
+    private bool isDebugMode = false; // デバッグモードの状態
+    private int debugCardIndex = 0; // デバッグで表示するカードのインデックス
+
 
     void Start()
     {
-        LoadUserData(); // ユーザーデータをロード
-        LoadCSV(); // CSVのデータを読み込む
+        LoadUserData(); 
+        LoadCSV(); // 引数を指定しない場合、全てのカードを読み込みますわ
         StartGame();
         // ボタンのリスナーを設定
         continueButton.onClick.AddListener(ContinueGame);
@@ -75,40 +76,40 @@ public class GameManager : MonoBehaviour
         // 選択肢パネルを非表示にする
         choicePanel.SetActive(false);
         // ポーズパネルを非表示
-        pausePanel.SetActive(false); 
+        pausePanel.SetActive(false);
     }
 
-     // ユーザーデータをロード（なければ新規作成）
+    // ユーザーデータをロード（なければ新規作成）
     void LoadUserData()
-{
-    string path = Path.Combine(Application.persistentDataPath, FILE_PATH);
-    if (File.Exists(path))
     {
-        string json = File.ReadAllText(path);
-        userData = JsonConvert.DeserializeObject<UserData>(json); // ✅ 直接 userData に代入！
-
-        if (userData == null)
+        string path = Path.Combine(Application.persistentDataPath, FILE_PATH);
+        if (File.Exists(path))
         {
-            Debug.LogError("userData の JSON 読み込みに失敗しました。新規データを作成します。");
-            userData = new UserData { highScore = 0, correctCards = new List<string>() };
+            string json = File.ReadAllText(path);
+            userData = JsonConvert.DeserializeObject<UserData>(json);
+
+            if (userData == null)
+            {
+                Debug.LogError("userData の JSON 読み込みに失敗しました。新規データを作成します。");
+                userData = new UserData { highScore = 0, correctCards = new List<string>() };
+                SaveUserData();
+            }
+            else if (userData.correctCards == null)
+            {
+                userData.correctCards = new List<string>();
+            }
+        }
+        else
+        {
+            // 初期データ作成
+            userData = new UserData
+            {
+                highScore = 0,
+                correctCards = new List<string>()
+            };
             SaveUserData();
         }
-        else if (userData.correctCards == null)
-        {
-            userData.correctCards = new List<string>(); // ✅ correctCards が null なら初期化
-        }
     }
-    else
-    {
-        // 初期データ作成
-        userData = new UserData
-        {
-            highScore = 0,
-            correctCards = new List<string>()
-        };
-        SaveUserData();
-    }
-}
 
     // ユーザーデータを保存
     void SaveUserData()
@@ -117,9 +118,6 @@ public class GameManager : MonoBehaviour
         string json = JsonConvert.SerializeObject(userData, Formatting.Indented);
         File.WriteAllText(path, json);
     }
-
-    
-    
 
     // ゲーム開始処理
     public void StartGame()
@@ -132,186 +130,147 @@ public class GameManager : MonoBehaviour
         StartTimer();
     }
 
-    // CSVデータを読み込む
-    void LoadCSV()
-{
-    // Resourcesフォルダ内のCSVファイルを読み込む
-    TextAsset csvFile = Resources.Load<TextAsset>("unit_data"); // ファイル名（拡張子は不要）
-
-    if (csvFile == null)
+    // ▼▼▼ こちらを改修いたしましたわ ▼▼▼
+    // CSVデータを読み込む (特定のunique_idを指定できるように)
+    void LoadCSV(string targetUniqueId = null)
     {
-        Debug.LogError("CSVファイルが見つかりません。Resourcesフォルダ内に配置してください。");
-        return;
+        TextAsset csvFile = Resources.Load<TextAsset>("unit_data");
+
+        if (csvFile == null)
+        {
+            Debug.LogError("CSVファイルが見つかりません。Resourcesフォルダ内に配置してください。");
+            return;
+        }
+
+        cardDatabase = new List<CardData>(); // データベースを初期化しますの
+
+        string[] lines = csvFile.text.Split('\n');
+
+        for (int i = 1; i < lines.Length; i++)
+        {
+            string line = lines[i].Trim();
+            if (string.IsNullOrEmpty(line)) continue;
+
+            string[] values = line.Split(',');
+            if (values.Length < 7)
+            {
+                // Debug.LogWarning($"行{i}のデータが不完全です: {line}");
+                continue;
+            }
+            
+            string uniqueId = values[2]; // unique_IDを取得
+
+            // IDが指定されている場合は一致するか確認し、指定がなければ全て読み込みますわ
+            if (string.IsNullOrEmpty(targetUniqueId) || uniqueId == targetUniqueId)
+            {
+                if (!int.TryParse(values[0], out int unitId)) continue;
+
+                string spritePath = values[1];
+                Sprite sprite = Resources.Load<Sprite>(spritePath);
+                if (sprite == null) continue;
+
+                float cropX = float.Parse(values[3]);
+                float cropY = float.Parse(values[4]);
+                float cropWidth = float.Parse(values[5]);
+                float cropHeight = float.Parse(values[6]);
+
+                cardDatabase.Add(new CardData
+                {
+                    unitId = unitId,
+                    uniqueId = uniqueId,
+                    sprite = sprite,
+                    cropRect = new Rect(cropX, cropY, cropWidth, cropHeight)
+                });
+
+                // 特定のIDを探している場合、見つけたらループを抜けて効率化しますの
+                if (!string.IsNullOrEmpty(targetUniqueId))
+                {
+                    break;
+                }
+            }
+        }
+        Debug.Log($"CSVから{cardDatabase.Count}枚のカードデータを読み込みました。");
     }
-
-    // CSVの内容を1行ごとに分割
-    string[] lines = csvFile.text.Split('\n');
-
-    cardDatabase = new List<CardData>(); // cardDatabaseを初期化
-
-    for (int i = 1; i < lines.Length; i++) // ヘッダー行をスキップするために1から開始
-    {
-        string line = lines[i].Trim();
-
-        // 空行をスキップ
-        if (string.IsNullOrEmpty(line)) continue;
-
-        // 行をカンマで分割
-        string[] values = line.Split(',');
-
-        if (values.Length < 3)
-        {
-            Debug.LogWarning($"行{i}のデータが不正です: {line}");
-            continue;
-        }
-
-        // unit_idを取得
-        if (!int.TryParse(values[0], out int unitId))
-        {
-            Debug.LogWarning($"行{i}のunit_idが不正です: {values[0]}");
-            continue;
-        }
-
-        string uniqueId = values[2]; // unique_IDを取得
-        // スプライトを取得
-        string spritePath = values[1];
-        Sprite sprite = Resources.Load<Sprite>(spritePath);
-
-        if (sprite == null)
-        {
-            Debug.LogWarning($"行{i}のスプライトが見つかりません: {spritePath}");
-            continue;
-        }
-
-        if (values.Length < 7) // 列数が足りない場合はスキップ
-        {
-            Debug.LogWarning($"行{i}のデータが不完全です: {line}");
-            continue;
-        }
-
-        float cropX = float.Parse(values[3]);
-        float cropY = float.Parse(values[4]);
-        float cropWidth = float.Parse(values[5]);
-        float cropHeight = float.Parse(values[6]);
-
-         // CardDataオブジェクトを作成し、リストに追加
-        cardDatabase.Add(new CardData
-        {
-            unitId = unitId,
-            uniqueId=uniqueId,
-            sprite = sprite,
-            cropRect = new Rect(cropX, cropY, cropWidth, cropHeight)
-        });
-    }
-
-    Debug.Log($"CSVから{cardDatabase.Count}枚のカードデータを読み込みました。");
-
-    foreach (var card in cardDatabase)
-{
-    Debug.Log($"unitId: {card.unitId}, uniqueId: {card.uniqueId}, sprite: {card.sprite.name}");
-}
-Debug.Log($"CSVから{cardDatabase.Count}枚のカードデータを読み込みました。");
-}
+    // ▲▲▲ ここまで ▲▲▲
 
 
     // 手札を設定
     void SetHandCards()
-{
-    handCardData = new List<CardData>();
-    List<CardData> shuffledCards = cardDatabase.OrderBy(x => Random.value).ToList();
-    if (shuffledCards.Count == 0)
     {
-        Debug.LogError("shuffledCardsが空です。CSVデータが正しく読み込まれているか確認してください。");
-        return;
-    }
-
-    // 正解カードを決定
-    CardData correctCard = shuffledCards[0];
-    handCardData.Add(correctCard);
-    Debug.Log($"正解カード: unitId={correctCard.unitId}, uniqueId={correctCard.uniqueId}");
-
-
-    // 異なる unitId を持つカードのみを手札に追加する
-    foreach (var card in shuffledCards)
-    {
-        if (handCardData.Count >= handCards.Length) break;
-        if (!handCardData.Any(c => c.unitId == card.unitId)) // unitId が重複しないかチェック
+        if (cardDatabase == null || cardDatabase.Count == 0)
         {
-            handCardData.Add(card);
+            Debug.LogError("カードデータベースが空ですわ！ LoadCSVが正しく実行されたかご確認くださいまし。");
+            return;
+        }
+
+        handCardData = new List<CardData>();
+        List<CardData> shuffledCards = cardDatabase.OrderBy(x => Random.value).ToList();
+        
+        CardData correctCard = shuffledCards[0];
+        handCardData.Add(correctCard);
+
+        foreach (var card in shuffledCards)
+        {
+            if (handCardData.Count >= handCards.Length) break;
+            if (!handCardData.Any(c => c.unitId == card.unitId))
+            {
+                handCardData.Add(card);
+            }
+        }
+
+        if (handCardData.Count < handCards.Length)
+        {
+            Debug.LogError($"手札が不足しています！ 必要: {handCards.Length}, 現在: {handCardData.Count}");
+        }
+
+        for (int i = 0; i < handCards.Length; i++)
+        {
+            if (i >= handCardData.Count) break; 
+            if (handCardData[i] != null)
+            {
+                handCards[i].sprite = handCardData[i].sprite;
+                int index = i;
+                handCards[i].GetComponent<Button>().onClick.RemoveAllListeners();
+                handCards[i].GetComponent<Button>().onClick.AddListener(() => OnCardClicked(index));
+            }
         }
     }
 
-     // 手札のデータが正しく設定されているか確認
-    if (handCardData.Count < handCards.Length)
+    // 問題カードを設定
+    void SetProblemCard()
     {
-        Debug.LogError($"手札が不足しています！ 必要: {handCards.Length}, 現在: {handCardData.Count}");
-    }
+        correctIndex = Random.Range(0, handCardData.Count);
+        CardData correctCard = handCardData[correctIndex];
 
+        List<CardData> sameUnitIdCards = cardDatabase
+            .Where(card => card.unitId == correctCard.unitId)
+            .ToList();
 
-    // 手札のイラストをUIに反映
-    for (int i = 0; i < handCards.Length; i++)
-    {
-        if (i >= handCardData.Count) break; // 安全策
-        if (handCardData[i] == null)
+        if (sameUnitIdCards.Count == 0)
         {
-            Debug.LogError($"handCardData[{i}] が null です！");
+            problemCard.sprite = CreateCroppedSprite(correctCard.sprite, correctCard.cropRect);
+            return;
+        }
+
+        CardData selectedCard = null;
+        foreach (var card in sameUnitIdCards)
+        {
+            if (card.uniqueId != correctCard.uniqueId)
+            {
+                selectedCard = card;
+                break;
+            }
+        }
+
+        if (selectedCard != null)
+        {
+            problemCard.sprite = CreateCroppedSprite(selectedCard.sprite, selectedCard.cropRect);
         }
         else
         {
-        handCards[i].sprite = handCardData[i].sprite;
-        int index = i; // ローカルコピーを作成
-        handCards[i].GetComponent<Button>().onClick.RemoveAllListeners();
-        handCards[i].GetComponent<Button>().onClick.AddListener(() => OnCardClicked(index));
-
-        Debug.Log($"カードボタン設定: index={index}, unitId={handCardData[i].unitId}, uniqueId={handCardData[i].uniqueId}");
-        }
-        
-    }
-}
-
-    // 問題カードを設定
-    // 問題カードを設定
-void SetProblemCard()
-{
-    // 1: リストのcardDatabaseから、correctIndexのカードと同じunit_idを持つカードを抽出
-    correctIndex = Random.Range(0, handCardData.Count); // 正解の手札のインデックスをランダムに決定
-    CardData correctCard = handCardData[correctIndex]; // 正解カードを取得
-
-    // 同じunit_idを持つカードをフィルタリング
-    List<CardData> sameUnitIdCards = cardDatabase
-        .Where(card => card.unitId == correctCard.unitId)
-        .ToList();
-
-    if (sameUnitIdCards.Count == 0)
-    {
-        Debug.LogError($"同じunit_idを持つカードが存在しません (unit_id: {correctCard.unitId})");
-        return;
-    }
-
-    // 2: 抽出したカードのunique_idを比較
-    CardData selectedCard = null;
-    foreach (var card in sameUnitIdCards)
-    {
-        if (card.uniqueId != correctCard.uniqueId)
-        {
-            selectedCard = card;
-            break;
+            problemCard.sprite = CreateCroppedSprite(correctCard.sprite, correctCard.cropRect);
         }
     }
-
-    // 3: 違うunique_idのカードを設定
-    if (selectedCard != null)
-{
-    problemCard.sprite = CreateCroppedSprite(selectedCard.sprite, selectedCard.cropRect);
-}
-else
-{
-    problemCard.sprite = CreateCroppedSprite(correctCard.sprite, correctCard.cropRect);
-}
-
-   
-
-}
 
     // タイマー開始
     void StartTimer()
@@ -322,9 +281,50 @@ else
 
     void Update()
     {
-        if (isTimeRunning)
+        if (Input.GetKeyDown(KeyCode.D))
         {
-            remainingTime -= Time.deltaTime; // 残り時間を減少
+            isDebugMode = !isDebugMode;
+            if (isDebugMode)
+            {
+                isTimeRunning = false; 
+                resultPanel.SetActive(false);
+                choicePanel.SetActive(false);
+                pausePanel.SetActive(false);
+                
+                foreach (var cardImage in handCards) { cardImage.gameObject.SetActive(false); }
+                timerText.gameObject.SetActive(false);
+                currentScoreText.gameObject.SetActive(false);
+
+                Debug.LogWarning("--- デバッグモードを開始します ---");
+                ShowDebugCard();
+            }
+            else
+            {
+                Debug.LogWarning("--- デバッグモードを終了します ---");
+                 foreach (var cardImage in handCards) { cardImage.gameObject.SetActive(true); }
+                currentScoreText.gameObject.SetActive(true);
+                StartGame();
+            }
+        }
+
+        if (isDebugMode)
+        {
+            if (Input.GetKeyDown(KeyCode.RightArrow))
+            {
+                debugCardIndex++;
+                if (debugCardIndex >= cardDatabase.Count) { debugCardIndex = 0; }
+                ShowDebugCard();
+            }
+            else if (Input.GetKeyDown(KeyCode.LeftArrow))
+            {
+                debugCardIndex--;
+                if (debugCardIndex < 0) { debugCardIndex = cardDatabase.Count - 1; }
+                ShowDebugCard();
+            }
+        }
+        else if (isTimeRunning)
+        {
+            remainingTime -= Time.deltaTime;
             timerText.text = Mathf.Ceil(remainingTime).ToString() + "秒";
 
             if (remainingTime <= 0)
@@ -336,95 +336,61 @@ else
     }
 
     private Sprite CreateCroppedSprite(Sprite originalSprite, Rect cropRect)
-{
-    Texture2D originalTexture = originalSprite.texture;
-    Rect spriteRect = originalSprite.textureRect;
+    {
+        Texture2D originalTexture = originalSprite.texture;
+        Rect spriteRect = originalSprite.textureRect;
 
-    // 元スプライトに対して cropRect を調整（テクスチャ座標系）
-    Rect actualCrop = new Rect(
-        spriteRect.x + cropRect.x,
-        spriteRect.y + cropRect.y,
-        cropRect.width,
-        cropRect.height
-    );
+        Rect actualCrop = new Rect(spriteRect.x + cropRect.x, spriteRect.y + cropRect.y, cropRect.width, cropRect.height);
 
-    Texture2D croppedTexture = new Texture2D((int)actualCrop.width, (int)actualCrop.height);
-    Color[] pixels = originalTexture.GetPixels(
-        (int)actualCrop.x,
-        (int)actualCrop.y,
-        (int)actualCrop.width,
-        (int)actualCrop.height
-    );
-    croppedTexture.SetPixels(pixels);
-    croppedTexture.Apply();
+        Texture2D croppedTexture = new Texture2D((int)actualCrop.width, (int)actualCrop.height);
+        Color[] pixels = originalTexture.GetPixels((int)actualCrop.x, (int)actualCrop.y, (int)actualCrop.width, (int)actualCrop.height);
+        croppedTexture.SetPixels(pixels);
+        croppedTexture.Apply();
 
-    return Sprite.Create(croppedTexture, new Rect(0, 0, croppedTexture.width, croppedTexture.height), new Vector2(0.5f, 0.5f));
-}
+        return Sprite.Create(croppedTexture, new Rect(0, 0, croppedTexture.width, croppedTexture.height), new Vector2(0.5f, 0.5f));
+    }
 
 
-    // 時間切れ処理
     void OnTimeUp()
     {
         isTimeRunning = false;
-        timerText.gameObject.SetActive(false); // 制限時間の表示を消す
+        timerText.gameObject.SetActive(false); 
         Debug.Log("時間切れ！");
         ShowChoicePanel();
     }
 
-    void UpdateScoreUI(){
-        if(currentScoreText != null)
-        {
-            currentScoreText.text="スコア:" + currentScore.ToString();
-        }
+    void UpdateScoreUI()
+    {
+        if (currentScoreText != null) { currentScoreText.text = "スコア:" + currentScore.ToString(); }
     }
 
-    // カードがクリックされたときの処理
     void OnCardClicked(int index)
     {
-        if (!isTimeRunning) return; // タイマーが動いていない場合は無効
+        if (!isTimeRunning || isDebugMode) return; 
 
-         if (handCardData == null || handCardData.Count == 0)
-    {
-        Debug.LogError("handCardDataがnullまたは空です！");
-        return;
-    }
+        if (handCardData == null || handCardData.Count <= index || index < 0) return;
 
-    if (index < 0 || index >= handCardData.Count)
-    {
-        Debug.LogError($"無効なインデックスが指定されました: {index}");
-        return;
-    }
-
-        isTimeRunning = false; // タイマーを停止
-        timerText.gameObject.SetActive(false); // タイマーUIを非表示
+        isTimeRunning = false; 
+        timerText.gameObject.SetActive(false); 
 
         if (index == correctIndex)
         {
             comboCount++;
-            int bonus = (comboCount > 1) ? 500 : 0; // 2連続目からボーナス付与
+            int bonus = (comboCount > 1) ? 500 : 0; 
             currentScore += 1000 + bonus;
 
-            //  userData の null チェックを追加
-        if (userData == null)
-        {
-            Debug.LogError("userData が null です！ LoadUserData() が正しく実行されたか確認してください。");
-            return;
-        }
-
-            // **正解したカードの unique_id を保存**
+            if (userData == null) return;
+            
             string uniqueId = handCardData[index].uniqueId;
-            if (!userData.correctCards.Contains(uniqueId)) // 重複防止
+            if (!userData.correctCards.Contains(uniqueId)) 
             {
                 userData.correctCards.Add(uniqueId);
             }
-
             SaveUserData();
-
            
             UpdateScoreUI();
             ShowResult(true);
         }
-        
         else
         {
             comboCount = 0;
@@ -432,98 +398,86 @@ else
         }
     }
 
-    // 結果の表示
     void ShowResult(bool isCorrect)
     {
         resultPanel.SetActive(true);
         judgeText.text = isCorrect ? "正解！" : "不正解！";
-        Invoke(nameof(EndRound), 2.0f); // 2秒後に選択肢を表示
+        Invoke(nameof(EndRound), 2.0f); 
     }
-
-    //ラウンド終了処理(スコア比較時にもUIを更新)
-    // ✅ ゲーム終了時にJSONを更新
-
+    
     void EndRound()
     {
         gameCount++;
-
         if (gameCount >= 10)
         {
-            // 3回プレイ後にスコア比較
-            if (currentScore > highScore)
+            if (currentScore > userData.highScore)
             {
                 userData.highScore = currentScore;
                 SaveUserData();
             }
-            gameCount = 0; // カウントをリセット
+            gameCount = 0;
             ShowChoicePanel();
         }
         else
         {
-            StartGame(); // 次のラウンドを開始
+            StartGame();
         }
-
-        UpdateScoreUI(); // スコア表示を更新
-
-
+        UpdateScoreUI();
     }
 
-
-    // 選択肢を表示
     void ShowChoicePanel()
     {
         choicePanel.SetActive(true);
-        //ここでハイスコアを表示する
-        currentHighScore.text="これまでのハイスコア:" + highScore.ToString();
-        currentScoreResult.text="今回のスコア:" + currentScore.ToString();
-         if (currentScore > highScore)
-            {
-                resultText.text="ハイスコア更新！";
-            }
-             else
+        currentHighScore.text = "これまでのハイスコア:" + userData.highScore.ToString();
+        currentScoreResult.text = "今回のスコア:" + currentScore.ToString();
+        if (currentScore > userData.highScore)
         {
-            resultText.text="ハイスコア更新失敗・・・";
+            resultText.text = "ハイスコア更新！";
         }
-
-
-
+        else
+        {
+            resultText.text = "ハイスコア更新失敗・・・";
+        }
     }
 
-
-
-    // ゲームを続ける
+    void ShowDebugCard()
+    {
+        if (cardDatabase == null || cardDatabase.Count == 0) return;
+        
+        CardData cardToShow = cardDatabase[debugCardIndex];
+        problemCard.sprite = CreateCroppedSprite(cardToShow.sprite, cardToShow.cropRect);
+        Debug.Log($"[デバッグ表示中] Index: {debugCardIndex}, UniqueID: {cardToShow.uniqueId}, UnitID: {cardToShow.unitId}");
+    }
+    
     public void ContinueGame()
     {
-        choicePanel.SetActive(false); // パネルを非表示
+        choicePanel.SetActive(false); 
+        currentScore = 0;
+        UpdateScoreUI();
         StartGame();
     }
 
-    // ゲームを終了する
     public void QuitGame()
     {
         Application.Quit();
-        Debug.Log("ゲーム終了"); // エディタで実行中の際にはこのログが出力されま
+        Debug.Log("ゲーム終了"); 
     }
-
-    // ゲームを一時停止
+    
     public void PauseGame()
     {
-        isTimeRunning = false; // タイマーを停止
-        pausePanel.SetActive(true); // ポーズパネルを表示
+        if (isDebugMode) return; 
+        isTimeRunning = false; 
+        pausePanel.SetActive(true);
     }
-
-    // ゲームを再開
+    
     public void ResumeGame()
     {
-        isTimeRunning = true; // タイマーを再開
-        pausePanel.SetActive(false); // ポーズパネルを閉じる
+        isTimeRunning = true;
+        pausePanel.SetActive(false);
     }
 
-    // タイトルに戻る
     public void ReturnToTitle()
     {
-        SceneManager.LoadScene("OutGame"); // タイトルシーンへ遷移
+        SceneManager.LoadScene("OutGame");
     }
-
-
 }
