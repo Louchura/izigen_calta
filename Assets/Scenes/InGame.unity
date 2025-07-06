@@ -243,6 +243,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2bb75ce6af03d44a683db12c4040d3ec, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  debugTargetId: 2155010103
   cardDatabase: []
   handCards:
   - {fileID: 1069689880}

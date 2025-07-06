@@ -8,6 +8,10 @@ using Newtonsoft.Json; // JSONを扱うためのライブラリ
 
 public class GameManager : MonoBehaviour
 {
+
+    [Header("デバッグ用設定")]
+    public string debugTargetId; // ここにIDを入力すると、そのカードだけを読み込みます
+
     [System.Serializable]
     public class CardData
     {
@@ -60,11 +64,24 @@ public class GameManager : MonoBehaviour
     private int debugCardIndex = 0; // デバッグで表示するカードのインデックス
 
 
+    // ▼▼▼ Startメソッドを改修しました ▼▼▼
     void Start()
     {
         LoadUserData(); 
-        LoadCSV(); // 引数を指定しない場合、全てのカードを読み込みますわ
-        StartGame();
+        if (!string.IsNullOrEmpty(debugTargetId))
+        {
+            // デバッグIDが指定されていれば、そのカードだけを読み込み、専用の表示処理を行います
+            Debug.LogWarning($"デバッグモード: {debugTargetId} のみを読み込みます。");
+            LoadCSV(debugTargetId);
+            SetupDebugCardView(); // 新しい専用の表示メソッドを呼び出します
+        }
+        else
+        {
+            // 通常通り、全てのカードを読み込んでゲームを開始します
+            LoadCSV(); 
+            StartGame();
+        }
+        
         // ボタンのリスナーを設定
         continueButton.onClick.AddListener(ContinueGame);
         quitButton.onClick.AddListener(QuitGame);
@@ -73,11 +90,43 @@ public class GameManager : MonoBehaviour
         resumeButton.onClick.AddListener(ResumeGame);
         quitToTitleButton.onClick.AddListener(ReturnToTitle);
 
-        // 選択肢パネルを非表示にする
-        choicePanel.SetActive(false);
-        // ポーズパネルを非表示
-        pausePanel.SetActive(false);
+        // 選択肢パネルとポーズパネルは、開始時は非表示にします
+        if (choicePanel != null) choicePanel.SetActive(false);
+        if (pausePanel != null) pausePanel.SetActive(false);
     }
+    // ▲▲▲ ここまで ▲▲▲
+
+    // ▼▼▼ debugTargetId指定時に呼び出す専用メソッドを新設しました ▼▼▼
+    void SetupDebugCardView()
+    {
+        // ゲームUIを非表示にして、デバッグ表示をクリーンにします
+        foreach (var card in handCards)
+        {
+            card.gameObject.SetActive(false);
+        }
+        timerText.gameObject.SetActive(false);
+        currentScoreText.gameObject.SetActive(false);
+        resultPanel.SetActive(false);
+        choicePanel.SetActive(false);
+        pausePanel.SetActive(false);
+
+        // 読み込んだカードが1枚だけあることを確認します
+        if (cardDatabase != null && cardDatabase.Count == 1)
+        {
+            // その1枚を問題カードとして表示します
+            CardData cardToView = cardDatabase[0];
+            problemCard.sprite = CreateCroppedSprite(cardToView.sprite, cardToView.cropRect);
+            problemCard.gameObject.SetActive(true);
+            Debug.Log($"[Debug View] 表示中のカード: {cardToView.uniqueId}");
+        }
+        else
+        {
+            Debug.LogError("デバッグ用のカードが正しく読み込めていません。IDが正しいか確認してください。");
+            problemCard.gameObject.SetActive(false);
+        }
+    }
+    // ▲▲▲ ここまで ▲▲▲
+
 
     // ユーザーデータをロード（なければ新規作成）
     void LoadUserData()
@@ -130,9 +179,8 @@ public class GameManager : MonoBehaviour
         StartTimer();
     }
 
-    // ▼▼▼ こちらを改修いたしましたわ ▼▼▼
     // CSVデータを読み込む (特定のunique_idを指定できるように)
-    void LoadCSV(string targetUniqueId = null)
+    public void LoadCSV(string targetUniqueId = null)
     {
         TextAsset csvFile = Resources.Load<TextAsset>("unit_data");
 
@@ -142,7 +190,7 @@ public class GameManager : MonoBehaviour
             return;
         }
 
-        cardDatabase = new List<CardData>(); // データベースを初期化しますの
+        cardDatabase = new List<CardData>(); // データベースを初期化
 
         string[] lines = csvFile.text.Split('\n');
 
@@ -160,7 +208,7 @@ public class GameManager : MonoBehaviour
             
             string uniqueId = values[2]; // unique_IDを取得
 
-            // IDが指定されている場合は一致するか確認し、指定がなければ全て読み込みますわ
+            // IDが指定されている場合は一致するか確認し、指定がなければ全て読み込む
             if (string.IsNullOrEmpty(targetUniqueId) || uniqueId == targetUniqueId)
             {
                 if (!int.TryParse(values[0], out int unitId)) continue;
@@ -182,7 +230,7 @@ public class GameManager : MonoBehaviour
                     cropRect = new Rect(cropX, cropY, cropWidth, cropHeight)
                 });
 
-                // 特定のIDを探している場合、見つけたらループを抜けて効率化しますの
+                // 特定のIDを探している場合、見つけたらループを抜けて効率化
                 if (!string.IsNullOrEmpty(targetUniqueId))
                 {
                     break;
@@ -191,7 +239,6 @@ public class GameManager : MonoBehaviour
         }
         Debug.Log($"CSVから{cardDatabase.Count}枚のカードデータを読み込みました。");
     }
-    // ▲▲▲ ここまで ▲▲▲
 
 
     // 手札を設定
@@ -199,7 +246,7 @@ public class GameManager : MonoBehaviour
     {
         if (cardDatabase == null || cardDatabase.Count == 0)
         {
-            Debug.LogError("カードデータベースが空ですわ！ LoadCSVが正しく実行されたかご確認くださいまし。");
+            Debug.LogError("カードデータベースが空です。LoadCSVが正しく実行されたか確認してください。");
             return;
         }
 
@@ -225,9 +272,10 @@ public class GameManager : MonoBehaviour
 
         for (int i = 0; i < handCards.Length; i++)
         {
-            if (i >= handCardData.Count) break; 
+            if (i >= handCards.Count()) break; 
             if (handCardData[i] != null)
             {
+                handCards[i].gameObject.SetActive(true);
                 handCards[i].sprite = handCardData[i].sprite;
                 int index = i;
                 handCards[i].GetComponent<Button>().onClick.RemoveAllListeners();
@@ -239,6 +287,8 @@ public class GameManager : MonoBehaviour
     // 問題カードを設定
     void SetProblemCard()
     {
+        if(handCardData == null || handCardData.Count == 0) return; // 安全策
+
         correctIndex = Random.Range(0, handCardData.Count);
         CardData correctCard = handCardData[correctIndex];
 
@@ -270,6 +320,7 @@ public class GameManager : MonoBehaviour
         {
             problemCard.sprite = CreateCroppedSprite(correctCard.sprite, correctCard.cropRect);
         }
+        problemCard.gameObject.SetActive(true);
     }
 
     // タイマー開始
@@ -337,10 +388,23 @@ public class GameManager : MonoBehaviour
 
     private Sprite CreateCroppedSprite(Sprite originalSprite, Rect cropRect)
     {
+        if(originalSprite == null) 
+        {
+            Debug.LogError("スプライトがnullです。");
+            return null;
+        }
         Texture2D originalTexture = originalSprite.texture;
         Rect spriteRect = originalSprite.textureRect;
 
         Rect actualCrop = new Rect(spriteRect.x + cropRect.x, spriteRect.y + cropRect.y, cropRect.width, cropRect.height);
+
+        //範囲外参照を防ぐためのチェック
+        if(actualCrop.xMax > originalTexture.width || actualCrop.yMax > originalTexture.height)
+        {
+            Debug.LogError("Texture rectangle is out of bounds");
+            return null;
+        }
+
 
         Texture2D croppedTexture = new Texture2D((int)actualCrop.width, (int)actualCrop.height);
         Color[] pixels = originalTexture.GetPixels((int)actualCrop.x, (int)actualCrop.y, (int)actualCrop.width, (int)actualCrop.height);
